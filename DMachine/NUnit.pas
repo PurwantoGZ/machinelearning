@@ -4,16 +4,23 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs;
+  Dialogs, StdCtrls;
 
 type
   T2Dimensi=array of array of double;
   T1Dimensi=array of double;
   TForm1 = class(TForm)
+    Terminal: TListBox;
+    btnTrain: TButton;
+    Terminal2: TListBox;
+    procedure btnTrainClick(Sender: TObject);
   private
     { Private declarations }
   public
     { Public declarations }
+    
+    procedure TrainDataBP(traindata:T2Dimensi;maxError:double;maxEpoch:integer;learnRate:double;momentum:double);
+    procedure TestDataBP(testData:T2Dimensi);
   end;
 
 var
@@ -44,7 +51,7 @@ procedure initBP(jumInput,jumHidden,jumOutput:integer);
 begin
 numInput:=jumInput;
 numHidden:=jumHidden;
-numOutput:=numOutput;
+numOutput:=jumOutput;
 
 SetLength(inputs,numInput);
 
@@ -132,7 +139,7 @@ begin
     SetLength(initialWeights,numweights);
     for i:=0 to numweights-1 do
     begin
-        initialWeights[i]:=0.1;
+        initialWeights[i]:=Round((Random*1000))/1000;
     end;
     SetWeights(initialWeights);
 end;
@@ -299,27 +306,138 @@ end;
 //-------------------------------------------------------
 
 //--------------------- Hitung MSE ----------------------
-function MSE(traindata:integer;xValues,tValues:T1Dimensi):double;
+function MSE(traindata:T2Dimensi):double;
 var
  sumError,err:double;
- yValues:T1Dimensi;
+ yValues,xValues,tValues:T1Dimensi;
  i,j,k:integer;
 begin
     sumError:=0.0;
+    SetLength(tValues,numOutput);
+    SetLength(xValues,numInput);
 
-    for i:=0 to traindata-1 do
+    for i:=0 to length(traindata)-1 do
     begin
+
+        for j:=0 to numInput-1 do
+        begin
+            xValues[j]:=traindata[i][j];
+        end;
+        for k:=0 to numOutput-1 do
+        begin
+            tValues[k]:=traindata[i][k+numInput];
+        end;
         yValues:=ComputeOutputs(xValues);
         for j:=0 to numOutput-1 do
         begin
             err:=0;
             err := tValues[j] - yValues[j];
-            sumError:=sumError+ Power(err,2);
+            sumError:=sumError+ sqr(err);
         end;
     end;
-    result:=(sumError/traindata);
+    result:=(sumError/length(traindata));
 end;
 //-------------------------------------------------------
+//---------------------TRAIN DATA -----------------------
+procedure TForm1.TrainDataBP(traindata:T2Dimensi;maxError:double;maxEpoch:integer;learnRate:double;momentum:double);
+var
+epoch,i,j,k:integer;
+Tmse:double;
+xValues,tValues:T1Dimensi;
+begin
+Terminal.Items.Clear;
+epoch:=0;
+Tmse:=0;
+SetLength(xValues,numInput);
+SetLength(tValues,numOutput);
+    repeat
+    Inc(epoch);
+    Tmse:=MSE(traindata);
+
+    for i:=0 to length(traindata)-1 do
+    begin
+        for j:=0 to numInput-1 do
+        begin
+            xValues[j]:=traindata[i][j];
+        end;
+        for k:=0 to numOutput-1 do
+        begin
+            tValues[k]:=traindata[i][numInput+k];
+        end;
+
+        ComputeOutputs(xValues);
+        UpdateWeights(tValues,learnRate,momentum);
+    end;
+    Terminal.Items.Add('iterasi-'+inttostr(epoch)+' MSE: '+floattostr(Tmse));
+    until (epoch>maxEpoch) or (Tmse<maxError);
+end;
+//-------------------------------------------------------
+//---------------------------TEST DATA TERLATIH----------
+procedure TForm1.TestDataBP(testData:T2Dimensi);
+var
+yValues,xValues,tValues:T1Dimensi;
+ i,j,k:integer;
+begin
+SetLength(xValues,numInput);
+SetLength(tValues,numOutput);
+Terminal2.Items.Clear;
+ for i:=0 to length(testData)-1 do
+ begin
+      for j:=0 to numInput-1 do
+      begin
+        xValues[j]:=testData[i][j];
+      end;
+      for k:=0 to numOutput-1 do
+      begin
+        tValues[k]:=testData[i][numInput+k];
+      end;
+      yValues:=ComputeOutputs(xValues);
+      for k:=0 to numOutput-1 do
+      begin
+        Terminal2.Items.Add(floattostr(yValues[k]));
+      end;
+ end;
+end;
+//-------------------------------------------------------
+
+procedure TForm1.btnTrainClick(Sender: TObject);
+var
+traindata,testData:T2Dimensi;
+numDataTraining,numColms:integer;
+numInput,numHidden,numOutput:integer;
+begin
+  numInput:=2;
+  numHidden:=14;
+  numOutput:=1;
+  numDataTraining:=4;
+  numColms:=numInput+numOutput;
+  SetLength(traindata,numDataTraining,numColms);
+  SetLength(testData,numDataTraining,numColms);
+
+  traindata[0][0]:=0;
+  traindata[0][1]:=0;
+  traindata[0][2]:=0;//output
+
+  traindata[1][0]:=1;
+  traindata[1][1]:=0;
+  traindata[1][2]:=0;//output
+
+  traindata[2][0]:=0;
+  traindata[2][1]:=1;
+  traindata[2][2]:=0;//output
+
+  traindata[3][0]:=1;
+  traindata[3][1]:=1;
+  traindata[3][2]:=1;//output
+
+  testData:=traindata;
+  // Buat BP
+  initBP(numInput,numHidden,numOutput);
+  initRandom;
+  TrainDataBP(traindata,0.01,1000,0.6,0.6);
+  TestDataBP(testData);
+end;
+
 
 
 end.
