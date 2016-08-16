@@ -13,6 +13,7 @@ type
     Terminal: TListBox;
     btnTrain: TButton;
     Terminal2: TListBox;
+    ListBox1: TListBox;
     procedure btnTrainClick(Sender: TObject);
   private
     { Private declarations }
@@ -140,6 +141,7 @@ begin
     for i:=0 to numweights-1 do
     begin
         initialWeights[i]:=Round((Random*1000))/1000;
+        //initialWeights[i]:=1;
     end;
     SetWeights(initialWeights);
 end;
@@ -160,12 +162,14 @@ begin
         for j:=0 to length(ihWeights[0])-1 do
         begin
             hasil[k+1]:=ihWeights[i][j];
+            Form1.ListBox1.Items.Add(floattostr(ihWeights[i][j]));
         end;
    end;
    //2. Ambil Bobot Bias weight to Hidden
    for i:=0 to length(hBiases)-1 do
    begin
       hasil[k+1]:=hBiases[i];
+      Form1.ListBox1.Items.Add(floattostr(hBiases[i]));
    end;
    //3. Ambil Bobot Hidden to Output
    for i:=0 to length(hoWeights)-1 do
@@ -173,12 +177,14 @@ begin
       for j:=0 to length(hoWeights[0])-1 do
       begin
           hasil[k+1]:=hoWeights[i][j];
+          Form1.ListBox1.Items.Add(floattostr(hoWeights[i][j]));
       end;
    end;
    //4. Ambil BBobot Bias Hidden to Ouput
    for i:=0 to length(oBiases)-1 do
    begin
       hasil[k+1]:=oBiases[i];
+      Form1.ListBox1.Items.Add(floattostr(oBiases[i]));
    end;
    result:=hasil;
 end;
@@ -396,6 +402,7 @@ Terminal2.Items.Clear;
       begin
         Terminal2.Items.Add(floattostr(yValues[k]));
       end;
+      Terminal2.Items.add('---------------------------------');
  end;
 end;
 //-------------------------------------------------------
@@ -403,39 +410,49 @@ end;
 procedure TForm1.btnTrainClick(Sender: TObject);
 var
 traindata,testData:T2Dimensi;
-numDataTraining,numColms:integer;
-numInput,numHidden,numOutput:integer;
+newBobot:T1Dimensi;
+numDataTraining,numColms,i,j:integer;
+numInput,numHidden,numOutput,numBobot:integer;
 begin
-  numInput:=2;
-  numHidden:=14;
-  numOutput:=1;
-  numDataTraining:=4;
+  numInput:=6;
+  numHidden:=5;
+  numOutput:=3;
+  numDataTraining:=2;
   numColms:=numInput+numOutput;
   SetLength(traindata,numDataTraining,numColms);
   SetLength(testData,numDataTraining,numColms);
 
-  traindata[0][0]:=0;
-  traindata[0][1]:=0;
-  traindata[0][2]:=0;//output
+  traindata[0][0]:=0.1;
+  traindata[0][1]:=0.2;
+  traindata[0][2]:=0.3;
+  traindata[0][3]:=0.4;
+  traindata[0][4]:=0.1;
+  traindata[0][5]:=0.2;
+  traindata[0][6]:=0;//Target
+  traindata[0][7]:=0;
+  traindata[0][8]:=0;
 
-  traindata[1][0]:=1;
-  traindata[1][1]:=0;
-  traindata[1][2]:=0;//output
-
-  traindata[2][0]:=0;
-  traindata[2][1]:=1;
-  traindata[2][2]:=0;//output
-
-  traindata[3][0]:=1;
-  traindata[3][1]:=1;
-  traindata[3][2]:=1;//output
+  traindata[1][0]:=0.5;
+  traindata[1][1]:=0.6;
+  traindata[1][2]:=0.6;
+  traindata[1][3]:=0.56;
+  traindata[1][4]:=0.8;
+  traindata[1][5]:=0.7;
+  traindata[1][6]:=0;//Target
+  traindata[1][7]:=0;
+  traindata[1][8]:=1;
 
   testData:=traindata;
   // Buat BP
   initBP(numInput,numHidden,numOutput);
   initRandom;
-  TrainDataBP(traindata,0.01,1000,0.6,0.6);
+  TrainDataBP(traindata,0.01,1000,0.6,0.1);
   TestDataBP(testData);
+
+  numBobot := (numInput * numHidden) + (numHidden * numOutput) + numHidden + numOutput;
+  SetLength(newBobot,numBobot);
+  newBobot:=GetWeights;
+  
 end;
 
 

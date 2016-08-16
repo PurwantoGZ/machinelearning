@@ -34,8 +34,16 @@ object Form1: TForm1
     Left = 264
     Top = 40
     Width = 273
-    Height = 361
+    Height = 137
     ItemHeight = 13
     TabOrder = 2
+  end
+  object ListBox1: TListBox
+    Left = 264
+    Top = 184
+    Width = 273
+    Height = 217
+    ItemHeight = 13
+    TabOrder = 3
   end
 end
